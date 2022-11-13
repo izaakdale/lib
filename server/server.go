@@ -1,18 +1,14 @@
 package server
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 )
 
-var ErrNoHandler = errors.New("handler must be provided to start a server")
-
 type (
 	configOptions struct {
-		host    *string
-		port    *string
-		handler http.Handler
+		host *string
+		port *string
 	}
 	option func(opt *configOptions) error
 )
@@ -20,7 +16,7 @@ type (
 // NewServer returns a http.Server with the specified options.
 // WithHandler must be called as an option.
 // If WithPort and WithHost are not used server address defaults to ":http"
-func New(optFuncs ...option) (*http.Server, error) {
+func New(handler http.Handler, optFuncs ...option) (*http.Server, error) {
 	var options configOptions
 	for _, optFunc := range optFuncs {
 		err := optFunc(&options)
@@ -43,13 +39,9 @@ func New(optFuncs ...option) (*http.Server, error) {
 		host = *options.host
 	}
 
-	if options.handler == nil {
-		return nil, ErrNoHandler
-	}
-
 	srv := &http.Server{
 		Addr:    fmt.Sprintf("%s:%s", host, port),
-		Handler: options.handler,
+		Handler: handler,
 	}
 
 	return srv, nil
@@ -69,14 +61,6 @@ func WithHost(h string) option {
 func WithPort(p string) option {
 	return func(opt *configOptions) error {
 		opt.port = &p
-		return nil
-	}
-}
-
-// WithHandler adds a http.ServeMux to the server, must be provided when calling NewServer
-func WithHandler(h http.Handler) option {
-	return func(opt *configOptions) error {
-		opt.handler = h
 		return nil
 	}
 }
