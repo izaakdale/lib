@@ -8,11 +8,14 @@ import (
 
 var ErrNoHandler = errors.New("handler must be provided to start a server")
 
-type configOptions struct {
-	host    *string
-	port    *string
-	handler http.Handler
-}
+type (
+	configOptions struct {
+		host    *string
+		port    *string
+		handler http.Handler
+	}
+	option func(opt *configOptions) error
+)
 
 // NewServer returns a http.Server with the specified options.
 // If WithPort and WithHost are not used server address defaults to ":http"
@@ -50,8 +53,6 @@ func NewServer(optFuncs ...option) (*http.Server, error) {
 
 	return srv, nil
 }
-
-type option func(opt *configOptions) error
 
 // WithHost adds the hostname to the configOptions to use with NewServer.
 // Defaults local connectivity
