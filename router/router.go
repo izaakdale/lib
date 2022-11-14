@@ -1,7 +1,6 @@
 package router
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -12,7 +11,6 @@ var routes = []routeOptions{
 }
 
 func ping(w http.ResponseWriter, r *http.Request) {
-	log.Printf("hit pingpong\n")
 	w.Write([]byte("pong"))
 }
 
@@ -24,7 +22,7 @@ type routeOptions struct {
 
 // NewRouter returns a http.Handler with the specified routesOptions.
 // To be used in conjunction with WithRoute.
-func NewRouter(opts ...routeOptions) http.Handler {
+func New(opts ...routeOptions) http.Handler {
 	router := httprouter.New()
 	opts = append(opts, routes...)
 	for _, route := range opts {
