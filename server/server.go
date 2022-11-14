@@ -14,7 +14,6 @@ type (
 )
 
 // NewServer returns a http.Server with the specified options.
-// WithHandler must be called as an option.
 // If WithPort and WithHost are not used server address defaults to ":http"
 func New(handler http.Handler, optFuncs ...option) (*http.Server, error) {
 	var options configOptions

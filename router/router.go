@@ -22,6 +22,8 @@ type routeOptions struct {
 	function http.HandlerFunc
 }
 
+// NewRouter returns a http.Handler with the specified routesOptions.
+// To be used in conjunction with WithRoute.
 func NewRouter(opts ...routeOptions) http.Handler {
 	router := httprouter.New()
 	opts = append(opts, routes...)
@@ -31,6 +33,8 @@ func NewRouter(opts ...routeOptions) http.Handler {
 	return router
 }
 
+// WithRoute takes a method and path string, as well as a HandlerFunc.
+// Returns a routeOptions for inputting to the NewRouter function.
 func WithRoute(m string, p string, f http.HandlerFunc) routeOptions {
 	return routeOptions{m, p, f}
 }

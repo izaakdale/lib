@@ -5,6 +5,7 @@ import (
 	"net/http"
 )
 
+// WriteJson writes the data to the ResponseWriter with Content-Type as application/json and the code as a header.
 func WriteJson(writer http.ResponseWriter, code int, data interface{}) {
 	writer.Header().Add("Content-Type", "application/json")
 	writer.WriteHeader(code)
@@ -12,6 +13,8 @@ func WriteJson(writer http.ResponseWriter, code int, data interface{}) {
 		panic(err)
 	}
 }
+
+// WriteXml writes the data to the ResponseWriter with Content-Type as application/xml and the code as a header.
 func WriteXml(writer http.ResponseWriter, code int, data interface{}) {
 	writer.Header().Add("Content-Type", "application/xml")
 	writer.WriteHeader(code)
