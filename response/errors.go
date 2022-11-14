@@ -1,15 +1,15 @@
 package response
 
-type Response struct {
+type Error struct {
 	Message string `json:"error_message"`
 }
 
-func (e Response) AsMessage() string {
+func (e Error) AsMessage() string {
 	return e.Message
 }
 
-func NewErrorResponse(message string) *Response {
-	return &Response{
+func NewErrorResponse(message string) *Error {
+	return &Error{
 		Message: message,
 	}
 }
