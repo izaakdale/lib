@@ -83,6 +83,8 @@ func WithPort(p string) option {
 	}
 }
 
+// WithTimeouts adds header and request read timeouts to the server.
+// Defaults to 1s for both.
 func WithTimeouts(header, total time.Duration) option {
 	return func(opt *configOptions) error {
 		opt.readHeaderTimeout = &header
