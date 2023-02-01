@@ -37,6 +37,7 @@ type (
 	}
 	option func(opt *configOptions) error
 
+	// Message is a wrapper for the AWS message that is returned from SQS.
 	Message struct {
 		Type      string    `json:"Type"`
 		MessageID string    `json:"MessageId"`
@@ -45,6 +46,7 @@ type (
 		Timestamp time.Time `json:"Timestamp"`
 	}
 
+	// This function is where the logic for the data goes.
 	ProcessorFunc func(Message) error
 )
 
@@ -96,7 +98,7 @@ func New(cfg aws.Config, queueURL string, optFuncs ...option) (*client, error) {
 }
 
 // Listen triggers a never ending for loop that continually requests the specified queue for messages.
-func (c *client) Listen(pf ProcessorFunc, errChan chan error) {
+func (c *client) Listen(pf ProcessorFunc, errChan chan<- error) {
 	for {
 		msgResult, err := c.sqsClient.ReceiveMessage(context.TODO(), c.input)
 		if err != nil {
