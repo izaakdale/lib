@@ -60,9 +60,9 @@ func WithEndpoint(e string) option {
 
 // Publish sends a message to the Topic initialised in the client.
 // Returns the message id and an error
-func (c *client) Publish(msg *string) (*string, error) {
+func (c *client) Publish(msg string) (*string, error) {
 	input := &sns.PublishInput{
-		Message:  msg,
+		Message:  &msg,
 		TopicArn: &c.TopicArn,
 	}
 

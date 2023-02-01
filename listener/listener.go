@@ -2,6 +2,8 @@ package listener
 
 import (
 	"context"
+	"encoding/json"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
@@ -34,6 +36,16 @@ type (
 		waitTimeSeconds     *int32
 	}
 	option func(opt *configOptions) error
+
+	Message struct {
+		Type      string    `json:"Type"`
+		MessageID string    `json:"MessageId"`
+		TopicArn  string    `json:"TopicArn"`
+		Message   string    `json:"Message"`
+		Timestamp time.Time `json:"Timestamp"`
+	}
+
+	ProcessorFunc func(Message) error
 )
 
 // New returns a new client that listens to the queue specified
@@ -84,7 +96,7 @@ func New(cfg aws.Config, queueURL string, optFuncs ...option) (*client, error) {
 }
 
 // Listen triggers a never ending for loop that continually requests the specified queue for messages.
-func (c *client) Listen(errChan chan error) {
+func (c *client) Listen(pf ProcessorFunc, errChan chan error) {
 	for {
 		msgResult, err := c.sqsClient.ReceiveMessage(context.TODO(), c.input)
 		if err != nil {
@@ -93,6 +105,15 @@ func (c *client) Listen(errChan chan error) {
 
 		if msgResult.Messages != nil {
 			for _, m := range msgResult.Messages {
+				var messageToProcess Message
+				err := json.Unmarshal([]byte(*m.Body), &messageToProcess)
+				if err != nil {
+					errChan <- err
+				}
+				err = pf(messageToProcess)
+				if err != nil {
+					errChan <- err
+				}
 				dMInput := &sqs.DeleteMessageInput{
 					QueueUrl:      c.input.QueueUrl,
 					ReceiptHandle: m.ReceiptHandle,
