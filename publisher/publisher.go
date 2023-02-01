@@ -2,13 +2,19 @@ package publisher
 
 import (
 	"context"
+	"errors"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sns"
 )
 
+var (
+	client                  *Client
+	ErrClientNotInitialised = errors.New("Unitialised client")
+)
+
 type (
-	client struct {
+	Client struct {
 		snsClient snsPublishAPI
 		TopicArn  string
 	}
@@ -23,18 +29,18 @@ type (
 	option func(opt *configOptions) error
 )
 
-// New creates a new publisher client with the AWS config and TopicArn specific.
+// Initialise creates a new publisher client and assigns it to the package level client.
 // Otional parameters include WithEndpoint.
-func New(cfg aws.Config, topicArn string, optFuncs ...option) (*client, error) {
+func Initialise(cfg aws.Config, topicArn string, optFuncs ...option) error {
 	var options configOptions
 	for _, optFunc := range optFuncs {
 		err := optFunc(&options)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
 
-	var cli = client{
+	var cli = Client{
 		TopicArn: topicArn,
 	}
 	if options.endpoint != nil {
@@ -46,7 +52,9 @@ func New(cfg aws.Config, topicArn string, optFuncs ...option) (*client, error) {
 		cli.snsClient = sns.NewFromConfig(cfg)
 	}
 
-	return &cli, nil
+	client = &cli
+
+	return nil
 }
 
 // WithEndpoint adds an specific endpoint to be used by the AWS API.
@@ -60,13 +68,16 @@ func WithEndpoint(e string) option {
 
 // Publish sends a message to the Topic initialised in the client.
 // Returns the message id and an error
-func (c *client) Publish(msg string) (*string, error) {
-	input := &sns.PublishInput{
-		Message:  &msg,
-		TopicArn: &c.TopicArn,
+func Publish(msg string) (*string, error) {
+	if client == nil {
+		return nil, ErrClientNotInitialised
 	}
 
-	result, err := c.snsClient.Publish(context.TODO(), input)
+	input := &sns.PublishInput{
+		Message:  &msg,
+		TopicArn: &client.TopicArn,
+	}
+	result, err := client.snsClient.Publish(context.TODO(), input)
 	if err != nil {
 		return nil, err
 	}

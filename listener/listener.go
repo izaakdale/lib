@@ -10,6 +10,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 )
 
+var (
+	client *Client
+)
+
 const (
 	defaultMaxNumberOfMessages = int32(10)
 	defaultVisibiltyTimeout    = int32(5)
@@ -17,7 +21,7 @@ const (
 )
 
 type (
-	client struct {
+	Client struct {
 		sqsClient sqsConsumeAPI
 		input     *sqs.ReceiveMessageInput
 	}
@@ -50,18 +54,18 @@ type (
 	ProcessorFunc func(Message) error
 )
 
-// New returns a new client that listens to the queue specified
+// Initialise creates a new client that listens to the queue specified and assigns it to the package client.
 // Options include WithEndpoint, WithMaxNumerOfMessages, WithVisibilityTimeout and WithWaitTimeSeconds.
-func New(cfg aws.Config, queueURL string, optFuncs ...option) (*client, error) {
+func Initialise(cfg aws.Config, queueURL string, optFuncs ...option) error {
 	var options configOptions
 	for _, optFunc := range optFuncs {
 		err := optFunc(&options)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
 
-	var cli client
+	var cli Client
 	cli.input = &sqs.ReceiveMessageInput{
 		QueueUrl: &queueURL,
 	}
@@ -94,13 +98,14 @@ func New(cfg aws.Config, queueURL string, optFuncs ...option) (*client, error) {
 		cli.input.WaitTimeSeconds = defaultWaitTimeSeconds
 	}
 
-	return &cli, nil
+	client = &cli
+	return nil
 }
 
 // Listen triggers a never ending for loop that continually requests the specified queue for messages.
-func (c *client) Listen(pf ProcessorFunc, errChan chan<- error) {
+func Listen(pf ProcessorFunc, errChan chan<- error) {
 	for {
-		msgResult, err := c.sqsClient.ReceiveMessage(context.TODO(), c.input)
+		msgResult, err := client.sqsClient.ReceiveMessage(context.TODO(), client.input)
 		if err != nil {
 			errChan <- err
 		}
@@ -117,10 +122,10 @@ func (c *client) Listen(pf ProcessorFunc, errChan chan<- error) {
 					errChan <- err
 				}
 				dMInput := &sqs.DeleteMessageInput{
-					QueueUrl:      c.input.QueueUrl,
+					QueueUrl:      client.input.QueueUrl,
 					ReceiptHandle: m.ReceiptHandle,
 				}
-				_, err = c.sqsClient.DeleteMessage(context.TODO(), dMInput)
+				_, err = client.sqsClient.DeleteMessage(context.TODO(), dMInput)
 				if err != nil {
 					errChan <- err
 				}
