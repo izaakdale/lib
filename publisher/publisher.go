@@ -15,8 +15,8 @@ var (
 
 type (
 	Client struct {
-		snsClient snsPublishAPI
-		TopicArn  string
+		sns      snsPublishAPI
+		TopicArn string
 	}
 	snsPublishAPI interface {
 		Publish(ctx context.Context,
@@ -44,12 +44,12 @@ func Initialise(cfg aws.Config, topicArn string, optFuncs ...option) error {
 		TopicArn: topicArn,
 	}
 	if options.endpoint != nil {
-		cli.snsClient = sns.NewFromConfig(cfg,
+		cli.sns = sns.NewFromConfig(cfg,
 			sns.WithEndpointResolver(
 				sns.EndpointResolverFromURL(*options.endpoint),
 			))
 	} else {
-		cli.snsClient = sns.NewFromConfig(cfg)
+		cli.sns = sns.NewFromConfig(cfg)
 	}
 
 	client = &cli
@@ -77,7 +77,7 @@ func Publish(msg string) (*string, error) {
 		Message:  &msg,
 		TopicArn: &client.TopicArn,
 	}
-	result, err := client.snsClient.Publish(context.TODO(), input)
+	result, err := client.sns.Publish(context.TODO(), input)
 	if err != nil {
 		return nil, err
 	}
