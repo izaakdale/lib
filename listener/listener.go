@@ -51,7 +51,7 @@ type (
 	}
 
 	// This function is where the logic for the data goes.
-	ProcessorFunc func(Message) error
+	ProcessorFunc func(context.Context, Message) error
 )
 
 // Initialise creates a new client that listens to the queue specified and assigns it to the package client.
@@ -117,7 +117,7 @@ func Listen(ctx context.Context, pf ProcessorFunc, errChan chan<- error) {
 				if err != nil {
 					errChan <- err
 				}
-				err = pf(messageToProcess)
+				err = pf(ctx, messageToProcess)
 				if err != nil {
 					errChan <- err
 				}
