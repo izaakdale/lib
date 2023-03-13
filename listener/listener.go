@@ -103,9 +103,9 @@ func Initialise(cfg aws.Config, queueURL string, optFuncs ...option) error {
 }
 
 // Listen triggers a never ending for loop that continually requests the specified queue for messages.
-func Listen(pf ProcessorFunc, errChan chan<- error) {
+func Listen(ctx context.Context, pf ProcessorFunc, errChan chan<- error) {
 	for {
-		msgResult, err := client.sqsClient.ReceiveMessage(context.TODO(), client.input)
+		msgResult, err := client.sqsClient.ReceiveMessage(ctx, client.input)
 		if err != nil {
 			errChan <- err
 		}
@@ -125,7 +125,7 @@ func Listen(pf ProcessorFunc, errChan chan<- error) {
 					QueueUrl:      client.input.QueueUrl,
 					ReceiptHandle: m.ReceiptHandle,
 				}
-				_, err = client.sqsClient.DeleteMessage(context.TODO(), dMInput)
+				_, err = client.sqsClient.DeleteMessage(ctx, dMInput)
 				if err != nil {
 					errChan <- err
 				}

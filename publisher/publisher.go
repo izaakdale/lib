@@ -68,7 +68,7 @@ func WithEndpoint(e string) option {
 
 // Publish sends a message to the Topic initialised in the client.
 // Returns the message id and an error
-func Publish(msg string) (*string, error) {
+func Publish(ctx context.Context, msg string) (*string, error) {
 	if client == nil {
 		return nil, ErrClientNotInitialised
 	}
@@ -77,7 +77,7 @@ func Publish(msg string) (*string, error) {
 		Message:  &msg,
 		TopicArn: &client.TopicArn,
 	}
-	result, err := client.sns.Publish(context.TODO(), input)
+	result, err := client.sns.Publish(ctx, input)
 	if err != nil {
 		return nil, err
 	}

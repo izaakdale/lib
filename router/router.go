@@ -7,7 +7,7 @@ import (
 )
 
 var routes = []routeOptions{
-	{http.MethodGet, "/ping", ping},
+	{http.MethodGet, "/_/ping", ping},
 }
 
 func ping(w http.ResponseWriter, r *http.Request) {
