@@ -43,13 +43,14 @@ func Initialise(cfg aws.Config, topicArn string, optFuncs ...option) error {
 	var cli = Client{
 		TopicArn: topicArn,
 	}
-	if options.endpoint != nil {
+
+	if *options.endpoint == "" || options.endpoint == nil {
+		cli.sns = sns.NewFromConfig(cfg)
+	} else {
 		cli.sns = sns.NewFromConfig(cfg,
 			sns.WithEndpointResolver(
 				sns.EndpointResolverFromURL(*options.endpoint),
 			))
-	} else {
-		cli.sns = sns.NewFromConfig(cfg)
 	}
 
 	client = &cli

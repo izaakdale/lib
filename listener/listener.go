@@ -73,13 +73,13 @@ func Initialise(cfg aws.Config, queueURL string, optFuncs ...option) error {
 		types.QueueAttributeNameAll,
 	}
 
-	if options.endpoint != nil {
+	if *options.endpoint == "" || options.endpoint == nil {
+		cli.sqsClient = sqs.NewFromConfig(cfg)
+	} else {
 		cli.sqsClient = sqs.NewFromConfig(cfg,
 			sqs.WithEndpointResolver(
 				sqs.EndpointResolverFromURL(*options.endpoint),
 			))
-	} else {
-		cli.sqsClient = sqs.NewFromConfig(cfg)
 	}
 
 	if options.maxNumberOfMessages != nil {
