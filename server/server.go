@@ -77,6 +77,9 @@ func WithHost(h string) option {
 // WithPort adds the specified to port to the configOptions to use with NewServer.
 // Defaults to 80 if no port is specified
 func WithPort(p string) option {
+	if p == "" {
+		p = "80"
+	}
 	return func(opt *configOptions) error {
 		opt.port = &p
 		return nil
