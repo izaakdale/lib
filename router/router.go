@@ -75,7 +75,7 @@ func WithRoute(m string, p string, f http.HandlerFunc) routerOptions {
 
 // WithMiddleware adds a middleware function to the router for processing each request.
 // When using this function multiple times the last entry will be called first with
-// the rest in decsending order before finally reaching the default URL logger.
+// the rest in reverse order.
 func WithMiddleware(mf middlewareFunc) routerOptions {
 	return routerOptions{Middleware: &middlewareOption{mf}}
 }
