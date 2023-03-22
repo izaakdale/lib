@@ -8,8 +8,8 @@ import (
 )
 
 var defaultOpts = []routerOptions{
-	{Route: &routeOption{http.MethodGet, "/_/ping", ping}},
-	{Middleware: &middlewareOption{urlLogger}},
+	{route: &routeOption{http.MethodGet, "/_/ping", ping}},
+	{middleware: &middlewareOption{urlLogger}},
 }
 
 func ping(w http.ResponseWriter, r *http.Request) {
@@ -24,8 +24,8 @@ func urlLogger(next http.Handler) http.Handler {
 
 type (
 	routerOptions struct {
-		Route      *routeOption
-		Middleware *middlewareOption
+		route      *routeOption
+		middleware *middlewareOption
 	}
 	routeOption struct {
 		method   string
@@ -47,11 +47,11 @@ func New(opts ...routerOptions) http.Handler {
 
 	var middlewares []middlewareFunc
 	for _, opt := range opts {
-		if opt.Route != nil {
-			router.HandlerFunc(opt.Route.method, opt.Route.path, opt.Route.function)
+		if opt.route != nil {
+			router.HandlerFunc(opt.route.method, opt.route.path, opt.route.function)
 		}
-		if opt.Middleware != nil {
-			middlewares = append(middlewares, opt.Middleware.function)
+		if opt.middleware != nil {
+			middlewares = append(middlewares, opt.middleware.function)
 		}
 	}
 
@@ -70,12 +70,12 @@ func New(opts ...routerOptions) http.Handler {
 // WithRoute takes a method and path string, as well as a HandlerFunc.
 // Returns a routeOptions for inputting to the NewRouter function.
 func WithRoute(m string, p string, f http.HandlerFunc) routerOptions {
-	return routerOptions{Route: &routeOption{m, p, f}}
+	return routerOptions{route: &routeOption{m, p, f}}
 }
 
 // WithMiddleware adds a middleware function to the router for processing each request.
 // When using this function multiple times the last entry will be called first with
 // the rest in reverse order.
 func WithMiddleware(mf middlewareFunc) routerOptions {
-	return routerOptions{Middleware: &middlewareOption{mf}}
+	return routerOptions{middleware: &middlewareOption{mf}}
 }
