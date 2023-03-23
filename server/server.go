@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 )
@@ -12,13 +13,29 @@ type (
 		port              *string
 		readHeaderTimeout *time.Duration
 		readTimeout       *time.Duration
+		timeoutHandler    *timeoutHandlerOptions
 	}
-	option func(opt *configOptions) error
+	option                func(opt *configOptions) error
+	timeoutHandlerOptions struct {
+		timeout time.Duration
+		msg     string
+	}
 )
+
+type server struct {
+	Name string
+	*http.Server
+}
+
+// Run prints the name of the server and the address and continues to ListenAndServe.
+func (s *server) Run() error {
+	log.Printf("%s running on %s\n", s.Name, s.Addr)
+	return s.ListenAndServe()
+}
 
 // NewServer returns a http.Server with the specified options.
 // If WithPort and WithHost are not used server address defaults to ":http"
-func New(handler http.Handler, optFuncs ...option) (*http.Server, error) {
+func New(name string, handler http.Handler, optFuncs ...option) (*server, error) {
 	var options configOptions
 	for _, optFunc := range optFuncs {
 		err := optFunc(&options)
@@ -55,6 +72,10 @@ func New(handler http.Handler, optFuncs ...option) (*http.Server, error) {
 		timeout = *options.readTimeout
 	}
 
+	if options.timeoutHandler != nil {
+		handler = http.TimeoutHandler(handler, options.timeoutHandler.timeout, options.timeoutHandler.msg)
+	}
+
 	srv := &http.Server{
 		Addr:              fmt.Sprintf("%s:%s", host, port),
 		Handler:           handler,
@@ -62,7 +83,7 @@ func New(handler http.Handler, optFuncs ...option) (*http.Server, error) {
 		ReadTimeout:       timeout,
 	}
 
-	return srv, nil
+	return &server{name, srv}, nil
 }
 
 // WithHost adds the hostname to the configOptions to use with NewServer.
@@ -92,6 +113,18 @@ func WithTimeouts(header, total time.Duration) option {
 	return func(opt *configOptions) error {
 		opt.readHeaderTimeout = &header
 		opt.readTimeout = &total
+		return nil
+	}
+}
+
+// WithTimeoutHanlder cancels the context after duration dt
+// and prints msg to the caller with a 503 code.
+func WithTimeoutHandler(dt time.Duration, msg string) option {
+	return func(opt *configOptions) error {
+		opt.timeoutHandler = &timeoutHandlerOptions{
+			timeout: dt,
+			msg:     msg,
+		}
 		return nil
 	}
 }
