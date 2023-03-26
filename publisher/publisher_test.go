@@ -2,6 +2,7 @@ package publisher_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -26,6 +27,14 @@ func (s stub) Publish(ctx context.Context, params *sns.PublishInput, optFns ...f
 	}, nil
 }
 
+type failStub struct {
+	T *testing.T
+}
+
+func (s failStub) Publish(ctx context.Context, params *sns.PublishInput, optFns ...func(*sns.Options)) (*sns.PublishOutput, error) {
+	return nil, errors.New("some aws error")
+}
+
 func TestInitialiseAndPublish(t *testing.T) {
 	ctx := context.Background()
 	s := stub{t}
@@ -37,11 +46,18 @@ func TestInitialiseAndPublish(t *testing.T) {
 	assert.Error(t, err)
 	assert.EqualError(t, err, publisher.ErrClientNotInitialised.Error())
 
-	err = publisher.Initialise(cfg, "arn:aws:sns:eu-west-2:000000000000:test-test-test", publisher.WithPublisher(s))
+	err = publisher.Initialise(cfg, "arn:aws:sns:eu-west-2:000000000000:test-test-test", publisher.WithPublisher(s), publisher.WithEndpoint("test"))
 	assert.NoError(t, err)
 
 	ret, err := publisher.Publish(ctx, inputMessage)
 	assert.NoError(t, err)
 
 	assert.Equal(t, *ret, messageID)
+
+	fs := failStub{}
+	err = publisher.Initialise(cfg, "arn:aws:sns:eu-west-2:000000000000:test-test-test", publisher.WithPublisher(fs), publisher.WithEndpoint("test"))
+	assert.NoError(t, err)
+
+	_, err = publisher.Publish(ctx, "")
+	assert.Error(t, err)
 }
