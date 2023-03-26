@@ -11,19 +11,18 @@ import (
 )
 
 var (
-	inputMessage  = "input"
-	outputMessage = "output"
+	inputMessage = "input"
+	messageID    = "output"
 )
 
 type stub struct {
 	T *testing.T
-	// Message *string
 }
 
 func (s stub) Publish(ctx context.Context, params *sns.PublishInput, optFns ...func(*sns.Options)) (*sns.PublishOutput, error) {
 	assert.Equal(s.T, inputMessage, *params.Message)
 	return &sns.PublishOutput{
-		MessageId: &outputMessage,
+		MessageId: &messageID,
 	}, nil
 }
 
@@ -44,5 +43,5 @@ func TestInitialiseAndPublish(t *testing.T) {
 	ret, err := publisher.Publish(ctx, inputMessage)
 	assert.NoError(t, err)
 
-	assert.Equal(t, *ret, outputMessage)
+	assert.Equal(t, *ret, messageID)
 }
