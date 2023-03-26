@@ -10,7 +10,7 @@ import (
 
 var (
 	client                  *Client
-	ErrClientNotInitialised = errors.New("Unitialised client")
+	ErrClientNotInitialised = errors.New("unitialised client")
 )
 
 type (
@@ -24,7 +24,8 @@ type (
 			optFns ...func(*sns.Options)) (*sns.PublishOutput, error)
 	}
 	configOptions struct {
-		endpoint *string
+		endpoint  *string
+		publisher snsPublishAPI
 	}
 	option func(opt *configOptions) error
 )
@@ -40,11 +41,19 @@ func Initialise(cfg aws.Config, topicArn string, optFuncs ...option) error {
 		}
 	}
 
+	if options.publisher != nil {
+		client = &Client{
+			TopicArn: topicArn,
+			sns:      options.publisher,
+		}
+		return nil
+	}
+
 	var cli = Client{
 		TopicArn: topicArn,
 	}
 
-	if *options.endpoint == "" || options.endpoint == nil {
+	if options.endpoint == nil || *options.endpoint == "" {
 		cli.sns = sns.NewFromConfig(cfg)
 	} else {
 		cli.sns = sns.NewFromConfig(cfg,
@@ -63,6 +72,15 @@ func Initialise(cfg aws.Config, topicArn string, optFuncs ...option) error {
 func WithEndpoint(e string) option {
 	return func(opt *configOptions) error {
 		opt.endpoint = &e
+		return nil
+	}
+}
+
+// WithPublisher allows the client to use their own publisher with the package.
+// Useful for stubbing.
+func WithPublisher(p snsPublishAPI) option {
+	return func(opt *configOptions) error {
+		opt.publisher = p
 		return nil
 	}
 }
