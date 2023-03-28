@@ -3,6 +3,8 @@ package router
 import (
 	"log"
 	"net/http"
+
+	"github.com/izaakdale/lib/response"
 )
 
 var defaultOpts = []routerOptions{
@@ -11,7 +13,7 @@ var defaultOpts = []routerOptions{
 }
 
 func ping(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("pong"))
+	response.WriteJson(w, http.StatusOK, "pong")
 }
 
 type StatusRecorder struct {
