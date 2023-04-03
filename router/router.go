@@ -7,7 +7,7 @@ import (
 )
 
 type (
-	routerOptions struct {
+	options struct {
 		route      *routeOption
 		middleware *middlewareOption
 	}
@@ -25,7 +25,7 @@ type (
 
 // NewRouter returns a http.Handler with the specified routesOptions.
 // To be used in conjunction with WithRoute.
-func New(opts ...routerOptions) http.Handler {
+func New(opts ...options) http.Handler {
 	router := httprouter.New()
 	opts = append(opts, defaultOpts...)
 
@@ -53,13 +53,13 @@ func New(opts ...routerOptions) http.Handler {
 
 // WithRoute takes a method and path string, as well as a HandlerFunc.
 // Returns a routeOptions for inputting to the NewRouter function.
-func WithRoute(m string, p string, f http.HandlerFunc) routerOptions {
-	return routerOptions{route: &routeOption{m, p, f}}
+func WithRoute(m string, p string, f http.HandlerFunc) options {
+	return options{route: &routeOption{m, p, f}}
 }
 
 // WithMiddleware adds a middleware function to the router for processing each request.
 // When using this function multiple times the last entry will be called first with
 // the rest in reverse order.
-func WithMiddleware(mf middlewareFunc) routerOptions {
-	return routerOptions{middleware: &middlewareOption{mf}}
+func WithMiddleware(mf middlewareFunc) options {
+	return options{middleware: &middlewareOption{mf}}
 }

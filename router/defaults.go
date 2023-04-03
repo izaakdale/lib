@@ -7,7 +7,7 @@ import (
 	"github.com/izaakdale/lib/response"
 )
 
-var defaultOpts = []routerOptions{
+var defaultOpts = []options{
 	{route: &routeOption{http.MethodGet, "/_/ping", ping}},
 	{middleware: &middlewareOption{urlLogger}},
 }
