@@ -21,6 +21,8 @@ type (
 	}
 )
 
+// New returns a http.Handler with the specified routesOptions.
+// To be used in conjunction with WithRoute and WithMiddleware.
 func New(opts ...options) http.Handler {
 	mux := http.NewServeMux()
 	opts = append(opts, defaultOpts...)
