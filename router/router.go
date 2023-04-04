@@ -2,8 +2,6 @@ package router
 
 import (
 	"net/http"
-
-	"github.com/julienschmidt/httprouter"
 )
 
 type (
@@ -23,16 +21,23 @@ type (
 	}
 )
 
-// NewRouter returns a http.Handler with the specified routesOptions.
-// To be used in conjunction with WithRoute.
 func New(opts ...options) http.Handler {
-	router := httprouter.New()
+	mux := http.NewServeMux()
 	opts = append(opts, defaultOpts...)
 
 	var middlewares []middlewareFunc
+
 	for _, opt := range opts {
 		if opt.route != nil {
-			router.HandlerFunc(opt.route.method, opt.route.path, opt.route.function)
+			o := opt
+			mux.Handle(opt.route.path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if o.route.method != r.Method {
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					w.Write([]byte("405 method not allowed\n"))
+					return
+				}
+				o.route.function.ServeHTTP(w, r)
+			}))
 		}
 		if opt.middleware != nil {
 			middlewares = append(middlewares, opt.middleware.function)
@@ -41,14 +46,14 @@ func New(opts ...options) http.Handler {
 
 	if len(middlewares) > 0 {
 		// need to kick off the handler func cascade with the router
-		curr := middlewares[0](router)
+		curr := middlewares[0](mux)
 		// keep wrapping each of the remaining middleware functions around the current
 		for i := 1; i < len(middlewares); i++ {
 			curr = middlewares[i](curr)
 		}
 		return curr
 	}
-	return router
+	return mux
 }
 
 // WithRoute takes a method and path string, as well as a HandlerFunc.
