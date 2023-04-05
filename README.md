@@ -5,7 +5,7 @@ Import:
 
     go get github.com/izaakdale/lib
     
-Packages (not all included):
+Packages:
 
 ------------------------------------------------
 
@@ -47,3 +47,27 @@ Packages (not all included):
         Publish
         WithEndpoint
         WithPublisher
+------------------------------------------------
+
+      Name - response
+      Description - http writer
+      Functions - 
+        WriteJson
+        WriteXml
+        WriteJsonError
+        WriteXmlError
+------------------------------------------------
+
+      Name - logger
+      Description - wrapper of uber/zap
+      Functions - 
+        Info
+        Debug
+        Error
+------------------------------------------------
+
+      Name - security
+      Description - crypto/bcryct hashing
+      Functions - 
+        HashPassword
+        VerifyPassword
