@@ -3,6 +3,7 @@ package listener
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -11,7 +12,8 @@ import (
 )
 
 var (
-	client *Client
+	client                  *Client
+	ErrClientNotInitialised = errors.New("uninitialised client")
 )
 
 const (
@@ -50,7 +52,7 @@ type (
 		Timestamp time.Time `json:"Timestamp"`
 	}
 
-	// This function is where the logic for the data goes.
+	// This function allows the user to define how their messages should be processed.
 	ProcessorFunc func(context.Context, Message) error
 )
 
@@ -104,6 +106,10 @@ func Initialise(cfg aws.Config, queueURL string, optFuncs ...option) error {
 
 // Listen triggers a never ending for loop that continually requests the specified queue for messages.
 func Listen(ctx context.Context, pf ProcessorFunc, errChan chan<- error) {
+	if client == nil {
+		errChan <- ErrClientNotInitialised
+		return
+	}
 	for {
 		msgResult, err := client.sqsClient.ReceiveMessage(ctx, client.input)
 		if err != nil {

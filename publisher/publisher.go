@@ -10,7 +10,7 @@ import (
 
 var (
 	client                  *Client
-	ErrClientNotInitialised = errors.New("unitialised client")
+	ErrClientNotInitialised = errors.New("uninitialised client")
 )
 
 type (
