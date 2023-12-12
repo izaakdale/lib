@@ -15,7 +15,7 @@ type (
 		readTimeout       *time.Duration
 		timeoutHandler    *timeoutHandlerOptions
 	}
-	option                func(opt *configOptions) error
+	option                func(opt *configOptions)
 	timeoutHandlerOptions struct {
 		timeout time.Duration
 		msg     string
@@ -30,18 +30,19 @@ type server struct {
 // Run prints the name of the server and the address and continues to ListenAndServe.
 func (s *server) Run() error {
 	log.Printf("%s running on %s\n", s.Name, s.Addr)
+
+	if s.TLSConfig != nil {
+		return s.ListenAndServeTLS("", "")
+	}
 	return s.ListenAndServe()
 }
 
 // NewServer returns a http.Server with the specified options.
 // If WithPort and WithHost are not used server address defaults to ":http"
-func New(name string, handler http.Handler, optFuncs ...option) (*server, error) {
+func New(name string, handler http.Handler, optFuncs ...option) *server {
 	var options configOptions
 	for _, optFunc := range optFuncs {
-		err := optFunc(&options)
-		if err != nil {
-			return nil, err
-		}
+		optFunc(&options)
 	}
 
 	var port string
@@ -83,48 +84,41 @@ func New(name string, handler http.Handler, optFuncs ...option) (*server, error)
 		ReadTimeout:       timeout,
 	}
 
-	return &server{name, srv}, nil
+	return &server{name, srv}
 }
 
 // WithHost adds the hostname to the configOptions to use with NewServer.
 // Defaults local connectivity
 func WithHost(h string) option {
-	return func(opt *configOptions) error {
+	return func(opt *configOptions) {
 		opt.host = &h
-		return nil
 	}
 }
 
 // WithPort adds the specified to port to the configOptions to use with NewServer.
 // Defaults to 80 if no port is specified
 func WithPort(p string) option {
-	if p == "" {
-		p = "80"
-	}
-	return func(opt *configOptions) error {
+	return func(opt *configOptions) {
 		opt.port = &p
-		return nil
 	}
 }
 
 // WithTimeouts adds header and request read timeouts to the server.
 // Defaults to 1s for both.
 func WithTimeouts(header, total time.Duration) option {
-	return func(opt *configOptions) error {
+	return func(opt *configOptions) {
 		opt.readHeaderTimeout = &header
 		opt.readTimeout = &total
-		return nil
 	}
 }
 
 // WithTimeoutHanlder cancels the context after duration dt
 // and prints msg to the caller with a 503 code.
 func WithTimeoutHandler(dt time.Duration, msg string) option {
-	return func(opt *configOptions) error {
+	return func(opt *configOptions) {
 		opt.timeoutHandler = &timeoutHandlerOptions{
 			timeout: dt,
 			msg:     msg,
 		}
-		return nil
 	}
 }

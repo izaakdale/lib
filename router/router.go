@@ -32,10 +32,9 @@ func New(opts ...options) http.Handler {
 	for _, opt := range opts {
 		if opt.route != nil {
 			o := opt
-			mux.Handle(opt.route.path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			mux.Handle(o.route.path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if o.route.method != r.Method {
-					w.WriteHeader(http.StatusMethodNotAllowed)
-					w.Write([]byte("405 method not allowed\n"))
+					http.Error(w, "405 Method Not Allowed", http.StatusMethodNotAllowed)
 					return
 				}
 				o.route.function.ServeHTTP(w, r)
@@ -46,16 +45,12 @@ func New(opts ...options) http.Handler {
 		}
 	}
 
-	if len(middlewares) > 0 {
-		// need to kick off the handler func cascade with the router
-		curr := middlewares[0](mux)
-		// keep wrapping each of the remaining middleware functions around the current
-		for i := 1; i < len(middlewares); i++ {
-			curr = middlewares[i](curr)
-		}
-		return curr
+	var h http.Handler
+	h = mux
+	for i := len(middlewares) - 1; i >= 0; i-- {
+		h = middlewares[i](h)
 	}
-	return mux
+	return h
 }
 
 // WithRoute takes a method and path string, as well as a HandlerFunc.

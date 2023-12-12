@@ -22,15 +22,3 @@ func WriteXml(writer http.ResponseWriter, code int, data interface{}) {
 		panic(err)
 	}
 }
-
-func WriteJsonError(writer http.ResponseWriter, code int, err error) {
-	WriteJson(writer, http.StatusBadRequest, map[string]string{
-		"error": err.Error(),
-	})
-}
-
-func WriteXmlError(writer http.ResponseWriter, code int, err error) {
-	WriteXml(writer, http.StatusBadRequest, map[string]string{
-		"error": err.Error(),
-	})
-}
