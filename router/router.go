@@ -1,7 +1,6 @@
 package router
 
 import (
-	"fmt"
 	"net/http"
 )
 
@@ -21,17 +20,6 @@ type (
 		function middlewareFunc
 	}
 )
-
-func checkMethodMiddleware(next http.Handler, method string) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != method {
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			w.Write([]byte(fmt.Sprintf("%d %s not allowed\n", http.StatusMethodNotAllowed, r.Method)))
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
-}
 
 // New returns a http.Handler with the specified routesOptions.
 // To be used in conjunction with WithRoute and WithMiddleware.
