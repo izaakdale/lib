@@ -2,9 +2,8 @@ package listener
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"time"
+	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
@@ -42,18 +41,8 @@ type (
 		waitTimeSeconds     *int32
 	}
 	option func(opt *configOptions) error
-
-	// Message is a wrapper for the AWS message that is returned from SQS.
-	Message struct {
-		Type      string    `json:"Type"`
-		MessageID string    `json:"MessageId"`
-		TopicArn  string    `json:"TopicArn"`
-		Message   string    `json:"Message"`
-		Timestamp time.Time `json:"Timestamp"`
-	}
-
 	// This function allows the user to define how their messages should be processed.
-	ProcessorFunc func(context.Context, Message) error
+	ProcessorFunc func(context.Context, []byte) error
 )
 
 // Initialise creates a new client that listens to the queue specified and assigns it to the package client.
@@ -75,7 +64,7 @@ func Initialise(cfg aws.Config, queueURL string, optFuncs ...option) error {
 		types.QueueAttributeNameAll,
 	}
 
-	if *options.endpoint == "" || options.endpoint == nil {
+	if options.endpoint == nil || *options.endpoint == "" {
 		cli.sqsClient = sqs.NewFromConfig(cfg)
 	} else {
 		cli.sqsClient = sqs.NewFromConfig(cfg,
@@ -113,31 +102,28 @@ func Listen(ctx context.Context, pf ProcessorFunc, errChan chan<- error) {
 	for {
 		msgResult, err := client.sqsClient.ReceiveMessage(ctx, client.input)
 		if err != nil {
-			errChan <- err
+			errChan <- fmt.Errorf("failed to receive message: %w", err)
 		}
 
-		if msgResult.Messages != nil {
-			for _, m := range msgResult.Messages {
-				var messageToProcess Message
-				err := json.Unmarshal([]byte(*m.Body), &messageToProcess)
-				if err != nil {
-					errChan <- err
+		if msgResult != nil {
+			if msgResult.Messages != nil {
+				for _, m := range msgResult.Messages {
+					err = pf(ctx, []byte(*m.Body))
+					if err != nil {
+						errChan <- err
+					}
+					dMInput := &sqs.DeleteMessageInput{
+						QueueUrl:      client.input.QueueUrl,
+						ReceiptHandle: m.ReceiptHandle,
+					}
+					_, err = client.sqsClient.DeleteMessage(ctx, dMInput)
+					if err != nil {
+						errChan <- err
+					}
 				}
-				err = pf(ctx, messageToProcess)
-				if err != nil {
-					errChan <- err
-				}
-				dMInput := &sqs.DeleteMessageInput{
-					QueueUrl:      client.input.QueueUrl,
-					ReceiptHandle: m.ReceiptHandle,
-				}
-				_, err = client.sqsClient.DeleteMessage(ctx, dMInput)
-				if err != nil {
-					errChan <- err
-				}
+			} else {
+				continue
 			}
-		} else {
-			continue
 		}
 	}
 }
